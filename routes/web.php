@@ -4,8 +4,7 @@ use App\Http\Controllers\SensorController;
 use App\Http\Controllers\ControlController;
 use PhpMqtt\Client\Facades\MQTT;
 use Illuminate\Support\Facades\Route;
-use PhpMqtt\Client\MqttClient;
-use PhpMqtt\Client\ConnectionSettings;
+use App\Http\Controllers\PumpController;
 // Public Routes
 Route::get('/', function () {
     return view('welcome');
@@ -36,65 +35,15 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Halaman utama panel kontrol
-Route::get('/', function () {
-    $settings = session('settings', [
-        'control_mode' => 'auto',
-        'manual_pump_refill' => 0,
-    ]);
-
-    return view('control', compact('settings'));
-})->name('control.panel');
+Route::get('/u', [PumpController::class, 'index'])->name('control.panel');
 
 
 // Simpan mode auto/manual + refill flag (tanpa MQTT)
-Route::post('/control/save', function () {
-    $settings = session('settings', []);
-
-    $settings['control_mode'] = request('control_mode', 'auto');
-    $settings['manual_pump_refill'] = request('manual_pump_refill', 0);
-
-    session(['settings' => $settings]);
-
-    return back()->with('success', 'System mode updated.');
-})->name('control.save');
+Route::post('/control/save', [PumpController::class, 'saveSettings'])->name('control.save');
 
 
 // Kirim MQTT ke ESP32 untuk kontrol pompa
-Route::post('/pump/control', function () {
-    $pump  = request('pump');   // pumpA / pumpB / refill
-    $state = request('state');  // ON / OFF
-
-    // Konfigurasi sesuai dengan ESP32 / HiveMQ
-    $server   = 'c19cb715626944f6991e5ad93c7c93f2.s1.eu.hivemq.cloud';
-    $port     = 8883;
-    $clientId = 'laravel-panel-' . uniqid();
-
-    $username = 'dendi';
-    $password = 'Dendi123';
-
-    $connectionSettings = (new ConnectionSettings)
-        ->setUsername($username)
-        ->setPassword($password)
-        ->setUseTls(true)
-        ->setTlsSelfSignedAllowed(true)
-        ->setTlsVerifyPeer(false); // sama seperti espClient.setInsecure();
-
-    $mqtt = new MqttClient($server, $port, $clientId);
-
-    try {
-        $mqtt->connect($connectionSettings, true);
-
-        // publish ke topik sesuai ESP32
-        $topic = "hydro/sistem1/control/{$pump}";
-        $mqtt->publish($topic, $state, 0);
-
-        $mqtt->disconnect();
-
-        return back()->with('success', "Pump {$pump} set to {$state}");
-    } catch (\Throwable $e) {
-        return back()->with('success', 'Gagal kirim MQTT: ' . $e->getMessage());
-    }
-})->name('pump.control');
+Route::post('/pump/control', [PumpController::class, 'controlPump'])->name('pump.control');
 
 // API Routes (Unprotected for sensors)
 Route::post('/api/sensors', [SensorController::class, 'store'])->name('api.sensors.store');
