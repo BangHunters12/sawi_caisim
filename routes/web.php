@@ -24,26 +24,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/analytics', [SensorController::class, 'analytics'])->name('analytics');
     Route::get('/analytics/export', [SensorController::class, 'export'])->name('analytics.export');
     
-    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
-    Route::put('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
-    
-    Route::get('/control', [App\Http\Controllers\ControlController::class, 'index'])->name('control.index');
-    Route::put('/control', [App\Http\Controllers\ControlController::class, 'update'])->name('control.update');
-
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+
+    // Admin Only Routes
+    Route::middleware(['admin'])->group(function () {
+        Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+        
+        Route::get('/control', [App\Http\Controllers\ControlController::class, 'index'])->name('control.index');
+        Route::put('/control', [App\Http\Controllers\ControlController::class, 'update'])->name('control.update');
+
+        // Pump Control (Refactored)
+        Route::get('/u', [PumpController::class, 'index'])->name('control.panel');
+        Route::post('/control/save', [PumpController::class, 'saveSettings'])->name('control.save');
+        Route::post('/pump/control', [PumpController::class, 'controlPump'])->name('pump.control');
+    });
 });
-
-// Halaman utama panel kontrol
-Route::get('/u', [PumpController::class, 'index'])->name('control.panel');
-
-
-// Simpan mode auto/manual + refill flag (tanpa MQTT)
-Route::post('/control/save', [PumpController::class, 'saveSettings'])->name('control.save');
-
-
-// Kirim MQTT ke ESP32 untuk kontrol pompa
-Route::post('/pump/control', [PumpController::class, 'controlPump'])->name('pump.control');
 
 // API Routes (Unprotected for sensors)
 Route::post('/api/sensors', [SensorController::class, 'store'])->name('api.sensors.store');

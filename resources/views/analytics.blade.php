@@ -16,10 +16,9 @@
                         <th class="px-6 py-3">Time</th>
                         <th class="px-6 py-3">Temp (°C)</th>
                         <th class="px-6 py-3">Humidity (%)</th>
-                        <th class="px-6 py-3">Soil Moisture (%)</th>
-                        <th class="px-6 py-3">Light (Lux)</th>
-                        <th class="px-6 py-3">Water Level (cm)</th>
                         <th class="px-6 py-3">TDS (ppm)</th>
+                        <th class="px-6 py-3">pH</th>
+                        <th class="px-6 py-3">Water Level (cm)</th>
                         <th class="px-6 py-3">Pumps Status</th>
                     </tr>
                 </thead>
@@ -36,24 +35,24 @@
                             {{ $sensor->humidity }}
                         </td>
                         <td class="px-6 py-4 text-gray-600">
-                            {{ $sensor->soil_moisture }}
+                            {{ $sensor->tds_value }}
                         </td>
                         <td class="px-6 py-4 text-gray-600">
-                            {{ $sensor->light_intensity }}
+                            {{ $sensor->ph }}
                         </td>
                         <td class="px-6 py-4 text-gray-600">
                             {{ $sensor->water_level }}
                         </td>
-                        <td class="px-6 py-4 text-gray-600">
-                            {{ $sensor->tds_value }}
-                        </td>
                         <td class="px-6 py-4">
                             <div class="flex gap-2">
                                 <span class="px-2 py-1 rounded text-xs font-medium {{ $sensor->water_pump_status ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                                    W: {{ $sensor->water_pump_status ? 'ON' : 'OFF' }}
+                                    A: {{ $sensor->pump_a_status ? 'ON' : 'OFF' }}
                                 </span>
                                 <span class="px-2 py-1 rounded text-xs font-medium {{ $sensor->nutrient_pump_status ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500' }}">
-                                    N: {{ $sensor->nutrient_pump_status ? 'ON' : 'OFF' }}
+                                    B: {{ $sensor->pump_b_status ? 'ON' : 'OFF' }}
+                                </span>
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ $sensor->refill_status ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500' }}">
+                                    R: {{ $sensor->refill_status ? 'ON' : 'OFF' }}
                                 </span>
                             </div>
                         </td>

@@ -34,7 +34,7 @@ class SensorController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['Date', 'Time', 'Temperature (C)', 'Humidity (%)', 'Soil Moisture (%)', 'Light (%)', 'Water Level (cm)', 'TDS (ppm)', 'Water Pump', 'Nutrient Pump'];
+        $columns = ['Date', 'Time', 'Temperature (C)', 'Humidity (%)', 'TDS (ppm)', 'pH', 'Water Level (cm)', 'Pump A', 'Pump B', 'Refill'];
 
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -48,12 +48,12 @@ class SensorController extends Controller
                     $sensor->created_at->format('H:i:s'),
                     $sensor->temperature,
                     $sensor->humidity,
-                    $sensor->soil_moisture,
-                    $sensor->light_intensity,
-                    $sensor->water_level,
                     $sensor->tds_value,
-                    $sensor->water_pump_status ? 'ON' : 'OFF',
-                    $sensor->nutrient_pump_status ? 'ON' : 'OFF',
+                    $sensor->ph,
+                    $sensor->water_level,
+                    $sensor->pump_a_status ? 'ON' : 'OFF',
+                    $sensor->pump_b_status ? 'ON' : 'OFF',
+                    $sensor->refill_status ? 'ON' : 'OFF',
                 ];
 
                 fputcsv($file, $row);
@@ -68,49 +68,17 @@ class SensorController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'temperature' => 'required|numeric',
-            'humidity' => 'required|numeric',
-            'soil_moisture' => 'required|numeric',
-            'light' => 'required|numeric',
-            'water_level' => 'required|numeric',
-            'tds_value' => 'required|numeric',
+            'temperature' => 'nullable|numeric',
+            'humidity' => 'nullable|numeric',
+            'tds_value' => 'nullable|numeric',
+            'ph' => 'nullable|numeric',
+            'water_level' => 'nullable|numeric',
+            'pump_a_status' => 'boolean',
+            'pump_b_status' => 'boolean',
+            'refill_status' => 'boolean',
         ]);
 
-        // Automation Logic
-        $waterPumpStatus = false;
-        $nutrientPumpStatus = false;
-
-        // Get settings or use defaults
-        $settings = \App\Models\Setting::pluck('value', 'key');
-        $minWaterLevel = $settings['min_water_level'] ?? 10;
-        $minSoilMoisture = $settings['min_soil_moisture'] ?? 40;
-        $minTdsValue = $settings['min_tds_value'] ?? 600;
-        $controlMode = $settings['control_mode'] ?? 'auto';
-
-        // Safety: If water level is too low (< 10cm), everything OFF
-        if ($data['water_level'] >= $minWaterLevel) {
-            if ($controlMode === 'manual') {
-                // Manual Mode: Use settings values
-                $waterPumpStatus = ($settings['manual_water_pump'] ?? '0') == '1';
-                $nutrientPumpStatus = ($settings['manual_nutrient_pump'] ?? '0') == '1';
-            } else {
-                // Auto Mode: Use sensor logic
-                // Water Pump Logic: ON if dry (< threshold), OFF if wet (> threshold + 10 for hysteresis)
-                if ($data['soil_moisture'] < $minSoilMoisture) {
-                    $waterPumpStatus = true;
-                }
-
-                // Nutrient Pump Logic: ON if TDS low (< threshold), OFF if high
-                if ($data['tds_value'] < $minTdsValue) {
-                    $nutrientPumpStatus = true;
-                }
-            }
-        }
-
-        $sensor = Sensor::create(array_merge($data, [
-            'water_pump_status' => $waterPumpStatus,
-            'nutrient_pump_status' => $nutrientPumpStatus,
-        ]));
+        $sensor = Sensor::create($data);
 
         return response()->json([
             'message' => 'Data stored successfully',

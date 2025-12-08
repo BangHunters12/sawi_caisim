@@ -28,11 +28,11 @@
                 </span>
                 <span class="text-sm text-gray-500">°C</span>
             </div>
-            <p class="text-xs text-green-500 mt-2 flex items-center gap-1">
+            <p class="text-xs {{ ($latest->temperature ?? 0) > 30 || ($latest->temperature ?? 0) < 20 ? 'text-red-500' : 'text-green-500' }} mt-2 flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
-                Latest Reading
+                {{ ($latest->temperature ?? 0) > 30 || ($latest->temperature ?? 0) < 20 ? 'Temperature Warning' : 'Temperature OK' }}
             </p>
         </div>
 
@@ -51,11 +51,11 @@
                     {{ $latest->ph ?? '--' }}
                 </span>
             </div>
-            <p class="text-xs text-green-500 mt-2 flex items-center gap-1">
+            <p class="text-xs {{ ($latest->ph ?? 0) < 5.5 || ($latest->ph ?? 0) > 6.5 ? 'text-red-500' : 'text-green-500' }} mt-2 flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
-                Optimal range: 5.5 – 6.5
+                {{ ($latest->ph ?? 0) < 5.5 || ($latest->ph ?? 0) > 6.5 ? 'pH Out of Range' : 'pH Level OK' }}
             </p>
         </div>
 
@@ -72,6 +72,8 @@
                 </div>
                 @if(($latest->tds_value ?? 0) > 1200)
                     <span class="text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">HIGH</span>
+                @elseif(($latest->tds_value ?? 0) < 500)
+                    <span class="text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">LOW</span>
                 @endif
             </div>
             <div class="flex items-end gap-2">
@@ -80,13 +82,19 @@
                 </span>
                 <span class="text-gray-500 mb-1">ppm</span>
             </div>
-            <p class="text-sm {{ ($latest->tds_value ?? 0) > 1200 ? 'text-yellow-600' : 'text-purple-600' }} mt-2">
-                {{ ($latest->tds_value ?? 0) > 1200 ? 'Check Nutrient Concentration' : 'Nutrient Level OK' }}
+            <p class="text-sm {{ ($latest->tds_value ?? 0) < 500 || ($latest->tds_value ?? 0) > 1200 ? 'text-yellow-600' : 'text-purple-600' }} mt-2">
+                @if(($latest->tds_value ?? 0) < 500)
+                    Low (< 500 ppm) - Add Nutrients
+                @elseif(($latest->tds_value ?? 0) > 1200)
+                    High (> 1200 ppm) - Add Water
+                @else
+                    TDS Level OK (500-1200 ppm)
+                @endif
             </p>
         </div>
 
         {{-- CARD 4: WATER LEVEL --}}
-        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 {{ ($latest->water_level ?? 0) < 20 ? 'border-red-500 bg-red-50' : 'border-blue-500' }} hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 {{ ($latest->water_level ?? 0) > 11 ? 'border-red-500 bg-red-50' : 'border-blue-500' }} hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-blue-100 rounded-lg text-blue-600">
@@ -96,7 +104,7 @@
                     </div>
                     <h3 class="text-gray-500 font-medium">Water Level</h3>
                 </div>
-                @if(($latest->water_level ?? 0) < 20)
+                @if(($latest->water_level ?? 0) > 11)
                     <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full animate-pulse">LOW</span>
                 @endif
             </div>
@@ -106,8 +114,8 @@
                 </span>
                 <span class="text-gray-500 mb-1">cm</span>
             </div>
-            <p class="text-sm {{ ($latest->water_level ?? 0) < 20 ? 'text-red-600' : 'text-blue-600' }} mt-2">
-                {{ ($latest->water_level ?? 0) < 20 ? 'Refill Tank' : 'Tank Level OK' }}
+            <p class="text-sm {{ ($latest->water_level ?? 0) > 11 ? 'text-red-600' : 'text-blue-600' }} mt-2">
+                {{ ($latest->water_level ?? 0) > 11 ? 'Water Level Low (Distance > 11cm)' : 'Water Level OK (Distance < 11cm)' }}
             </p>
         </div>
     </div>
@@ -335,9 +343,13 @@
         function simulateData() {
             const data = {
                 temperature: (Math.random() * (32 - 24) + 24).toFixed(1),
+                humidity: (Math.random() * (80 - 40) + 40).toFixed(1),
                 ph: (Math.random() * (6.8 - 5.5) + 5.5).toFixed(2),
                 tds_value: (Math.random() * (1200 - 500) + 500).toFixed(0),
-                water_level: (Math.random() * (40 - 10) + 10).toFixed(1)
+                water_level: (Math.random() * (40 - 10) + 10).toFixed(1),
+                pump_a_status: Math.random() > 0.5,
+                pump_b_status: Math.random() > 0.5,
+                refill_status: Math.random() > 0.5
             };
 
             fetch('/api/sensors', {

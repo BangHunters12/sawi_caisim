@@ -57,6 +57,7 @@
                     @endif
                 </a>
 
+                @if(Auth::user()->isAdmin())
                 <p class="sidebar-text px-4 text-xs font-semibold text-emerald-500 uppercase tracking-wider mb-2 mt-6 transition-all duration-300 whitespace-nowrap">Configuration</p>
 
                 <a href="{{ route('control.index') }}" class="group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 {{ request()->routeIs('control.*') ? 'bg-emerald-600/20 text-emerald-100 shadow-inner border border-emerald-500/20' : 'text-emerald-300/80 hover:bg-emerald-800/50 hover:text-white hover:translate-x-1' }}">
@@ -78,6 +79,7 @@
                         <div class="sidebar-text ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] transition-all duration-300"></div>
                     @endif
                 </a>
+                @endif
             </nav>
 
             <div class="p-4 border-t border-emerald-800/50 bg-emerald-900/30">
